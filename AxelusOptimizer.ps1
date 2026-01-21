@@ -1,9 +1,8 @@
 # ==========================================================
-# Axelus Optimizer Core Functions
+# Axelus Optimizer — Core Functions
 # ==========================================================
 
-# POWER PLAN
-function Set-PowerPlan { 
+function Set-PowerPlan {
     try {
         powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 > $null
         powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61
@@ -11,7 +10,6 @@ function Set-PowerPlan {
     } catch { return @{Text="Failed to set Power Plan: $_"; Success=$false} }
 }
 
-# GAME DVR OFF
 function Disable-GameDVR {
     try {
         reg add "HKCU\System\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f
@@ -20,7 +18,6 @@ function Disable-GameDVR {
     } catch { return @{Text="Failed to disable Game DVR: $_"; Success=$false} }
 }
 
-# INPUT / LATENCY
 function Input-LatencyTweaks {
     try {
         reg add "HKCU\Control Panel\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f
@@ -30,7 +27,6 @@ function Input-LatencyTweaks {
     } catch { return @{Text="Failed Input & Latency tweaks: $_"; Success=$false} }
 }
 
-# NETWORK
 function Network-Optimizations {
     try {
         netsh interface tcp set global autotuninglevel=normal
@@ -40,7 +36,6 @@ function Network-Optimizations {
     } catch { return @{Text="Failed Network optimizations: $_"; Success=$false} }
 }
 
-# SERVICES DEBLOAT
 function Services-Debloat {
     $services = @("DiagTrack","MapsBroker","SysMain","WSearch","Fax","RetailDemo","XboxGipSvc","XboxNetApiSvc","XblAuthManager","XblGameSave")
     try {
@@ -52,10 +47,10 @@ function Services-Debloat {
     } catch { return @{Text="Failed to debloat services: $_"; Success=$false} }
 }
 
-# GPU / SYSTEM TWEAKS
 function GPU-Tweaks {
     try {
         reg add "HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" /v HwSchMode /t REG_DWORD /d 2 /f
         return @{Text="GPU & system tweaks applied!"; Success=$true}
     } catch { return @{Text="Failed GPU tweaks: $_"; Success=$false} }
 }
+
