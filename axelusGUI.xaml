@@ -1,0 +1,2 @@
+<Button Name="btnPowerPlan" Content="Power Plan" Height="40" ToolTip="Sets Ultimate Performance power plan"/>
+<TextBox Name="logBox" Height="180" VerticalAlignment="Bottom" Margin="0,0,0,10" Background="Black" Foreground="White" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
