@@ -1,25 +1,29 @@
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
+# ==========================================================
+# Axelus Optimizer Modern GUI - WPF Version
+# Author: Axelus
+# ==========================================================
+
+Add-Type -AssemblyName PresentationFramework
 
 # --------------------------
-# SPRAWDZENIE ADMINA
+# ADMIN CHECK
 # --------------------------
 if (-not ([Security.Principal.WindowsPrincipal] `
     [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
     [Security.Principal.WindowsBuiltInRole] "Administrator"))
 {
-    [System.Windows.Forms.MessageBox]::Show("Run PowerShell as Administrator!","Error","OK","Error")
+    [System.Windows.MessageBox]::Show("Run PowerShell as Administrator!","Error","OK","Error")
     exit
 }
 
 # --------------------------
-# FUNKCJE OPTIMALIZACJI
+# FUNCTIONS
 # --------------------------
 function Set-PowerPlan {
     try {
         powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 > $null
         powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61
-        return @{Text="Power Plan set!"; Success=$true}
+        return @{Text="Ultimate Performance Power Plan set!"; Success=$true}
     } catch { return @{Text="Failed to set Power Plan: $_"; Success=$false} }
 }
 
@@ -68,77 +72,91 @@ function GPU-Tweaks {
 }
 
 # --------------------------
-# GUI
+# WPF XAML
 # --------------------------
-$form = New-Object System.Windows.Forms.Form
-$form.Text = "Axelus Optimizer GUI"
-$form.Size = New-Object System.Drawing.Size(580,520)
-$form.StartPosition = "CenterScreen"
-$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
-$form.MaximizeBox = $false
+$XAML = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        Title="Axelus Optimizer" Height="550" Width="650"
+        WindowStartupLocation="CenterScreen" Background="#1E1E1E">
+    <Grid Margin="10">
+        <!-- Logo -->
+        <TextBlock Text="AXELUS" Foreground="OrangeRed" FontSize="28" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Top"/>
 
-# Log textbox
-$logBox = New-Object System.Windows.Forms.TextBox
-$logBox.Multiline = $true
-$logBox.Location = New-Object System.Drawing.Point(20,310)
-$logBox.Size = New-Object System.Drawing.Size(540,170)
-$logBox.ScrollBars = "Vertical"
-$logBox.ReadOnly = $true
-$logBox.BackColor = [System.Drawing.Color]::Black
-$logBox.ForeColor = [System.Drawing.Color]::White
-$logBox.Font = New-Object System.Drawing.Font("Consolas",10)
-$form.Controls.Add($logBox)
+        <!-- Buttons Column -->
+        <StackPanel Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,60,0,0" Width="280" Spacing="15">
+            <Button Name="btnPowerPlan" Content="Power Plan" Height="40" ToolTip="Sets Ultimate Performance power plan" />
+            <Button Name="btnGameDVR" Content="Game DVR Off" Height="40" ToolTip="Disables Game DVR & background capture" />
+            <Button Name="btnInputLatency" Content="Input/Latency" Height="40" ToolTip="Improves mouse/input latency" />
+            <Button Name="btnNetwork" Content="Network" Height="40" ToolTip="Optimizes network settings" />
+            <Button Name="btnServices" Content="Services" Height="40" ToolTip="Stops & disables unnecessary services" />
+            <Button Name="btnGPU" Content="GPU Tweaks" Height="40" ToolTip="Applies GPU & system tweaks" />
+            <Button Name="btnRestart" Content="Restart PC" Height="40" Background="Red" Foreground="White" FontWeight="Bold" ToolTip="Restarts the PC" />
+        </StackPanel>
 
-# Funkcja logowania z kolorem
-function Log($result) {
+        <!-- Description Column -->
+        <StackPanel Orientation="Vertical" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="320,60,0,0" Width="300" Spacing="15">
+            <TextBlock Text="Sets Windows Ultimate Performance power plan for max CPU/GPU performance." Foreground="White" TextWrapping="Wrap"/>
+            <TextBlock Text="Disables Game DVR & background recording for smoother gaming." Foreground="White" TextWrapping="Wrap"/>
+            <TextBlock Text="Tweaks mouse & input latency for faster response." Foreground="White" TextWrapping="Wrap"/>
+            <TextBlock Text="Optimizes network settings like TCP autotuning & timestamps." Foreground="White" TextWrapping="Wrap"/>
+            <TextBlock Text="Stops unnecessary Windows services safe for gaming." Foreground="White" TextWrapping="Wrap"/>
+            <TextBlock Text="Enables GPU Hardware Scheduling for better frame delivery." Foreground="White" TextWrapping="Wrap"/>
+            <TextBlock Text="Restarts the PC to apply all changes." Foreground="White" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- Log Box -->
+        <TextBox Name="logBox" Height="180" VerticalAlignment="Bottom" Margin="0,0,0,10" Background="Black" Foreground="White" FontFamily="Consolas" FontSize="12" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+    </Grid>
+</Window>
+"@
+
+# --------------------------
+# Load XAML
+# --------------------------
+$reader=(New-Object System.Xml.XmlNodeReader $XAML)
+$Form=[Windows.Markup.XamlReader]::Load($reader)
+
+# --------------------------
+# Get Controls
+# --------------------------
+$logBox = $Form.FindName("logBox")
+$btnPowerPlan = $Form.FindName("btnPowerPlan")
+$btnGameDVR = $Form.FindName("btnGameDVR")
+$btnInputLatency = $Form.FindName("btnInputLatency")
+$btnNetwork = $Form.FindName("btnNetwork")
+$btnServices = $Form.FindName("btnServices")
+$btnGPU = $Form.FindName("btnGPU")
+$btnRestart = $Form.FindName("btnRestart")
+
+# --------------------------
+# Log function
+# --------------------------
+function Log($result){
     $timestamp = Get-Date -Format "HH:mm:ss"
-    if ($result.Success) {
-        $logBox.SelectionColor = [System.Drawing.Color]::Lime
-    } else {
-        $logBox.SelectionColor = [System.Drawing.Color]::Red
-    }
-    $logBox.AppendText("[$timestamp] $($result.Text)`r`n")
-    $logBox.ScrollToCaret()
+    $color = if ($result.Success) {"Lime"} else {"Red"}
+    $logBox.Dispatcher.Invoke([action]{
+        $logBox.AppendText("[$timestamp] $($result.Text)`r`n")
+        $logBox.ScrollToEnd()
+    })
 }
 
-# Przyciski i tooltipy
-$buttons = @(
-    @{Text="Power Plan"; Func={Log (Set-PowerPlan)}; Tip="Sets Ultimate Performance power plan"},
-    @{Text="Game DVR Off"; Func={Log (Disable-GameDVR)}; Tip="Disables Game DVR & Background Capture"},
-    @{Text="Input/Latency"; Func={Log (Input-LatencyTweaks)}; Tip="Improves mouse/input latency"},
-    @{Text="Network"; Func={Log (Network-Optimizations)}; Tip="Optimizes network settings for gaming"},
-    @{Text="Services"; Func={Log (Services-Debloat)}; Tip="Stops and disables non-essential services"},
-    @{Text="GPU Tweaks"; Func={Log (GPU-Tweaks)}; Tip="Applies GPU scheduling tweaks"}
-)
-
-$y = 20
-foreach ($btn in $buttons) {
-    $button = New-Object System.Windows.Forms.Button
-    $button.Text = $btn.Text
-    $button.Size = New-Object System.Drawing.Size(220,40)
-    $button.Location = New-Object System.Drawing.Point(170,$y)
-    $button.Add_Click($btn.Func)
-    $tooltip = New-Object System.Windows.Forms.ToolTip
-    $tooltip.SetToolTip($button,$btn.Tip)
-    $form.Controls.Add($button)
-    $y += 50
-}
-
-# Restart PC button
-$restartBtn = New-Object System.Windows.Forms.Button
-$restartBtn.Text = "Restart PC"
-$restartBtn.Size = New-Object System.Drawing.Size(220,40)
-$restartBtn.Location = New-Object System.Drawing.Point(170,$y)
-$restartBtn.BackColor = [System.Drawing.Color]::Red
-$restartBtn.ForeColor = [System.Drawing.Color]::White
-$restartBtn.Font = New-Object System.Drawing.Font("Microsoft Sans Serif",10,[System.Drawing.FontStyle]::Bold)
-$restartBtn.Add_Click({
-    if ([System.Windows.Forms.MessageBox]::Show("Restart PC now?", "Restart", [System.Windows.Forms.MessageBoxButtons]::YesNo) -eq [System.Windows.Forms.DialogResult]::Yes) {
+# --------------------------
+# Button Click Events
+# --------------------------
+$btnPowerPlan.Add_Click({Log (Set-PowerPlan)})
+$btnGameDVR.Add_Click({Log (Disable-GameDVR)})
+$btnInputLatency.Add_Click({Log (Input-LatencyTweaks)})
+$btnNetwork.Add_Click({Log (Network-Optimizations)})
+$btnServices.Add_Click({Log (Services-Debloat)})
+$btnGPU.Add_Click({Log (GPU-Tweaks)})
+$btnRestart.Add_Click({
+    if ([System.Windows.MessageBox]::Show("Restart PC now?", "Restart", "YesNo") -eq "Yes") {
         Restart-Computer
     }
 })
-$form.Controls.Add($restartBtn)
 
-# Start GUI
-$form.Add_Shown({$form.Activate()})
-[void]$form.ShowDialog()
+# --------------------------
+# Show Window
+# --------------------------
+$Form.ShowDialog() | out-null
+
