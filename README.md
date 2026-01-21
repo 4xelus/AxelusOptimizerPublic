@@ -1,15 +1,19 @@
-# Axelus Optimizer GUI
+# Axelus Optimizer
 
-High-performance Windows gaming optimizer.
+High-performance Windows gaming optimizer with modern GUI.
 
-## Requirements
-- Run PowerShell as Administrator
-- Windows 10/11
+## Features
+- Power Plan: sets Ultimate Performance mode
+- Game DVR Off: disables background capture
+- Input/Latency: improves mouse & input response
+- Network: optimizes TCP and network settings
+- Services: disables unnecessary Windows services safe for gaming
+- GPU Tweaks: enables hardware scheduling & system tweaks
+- Restart PC: applies changes
 
-## Usage
-1. Open PowerShell as Admin
-2. Navigate to the folder containing `axelusGUI.ps1`
-3. Run:
-   Set-ExecutionPolicy Bypass -Scope Process
-   .\axelusGUI.ps1
-4. Use the buttons to run optimizations individually.
+## Installation
+
+1. Clone repository:
+
+```powershell
+git clone https://github.com/4xelus/AxelusOptimizerPublic.git
