@@ -1,3 +1,7 @@
+# Import starych funkcji
+. "C:\ścieżka\do\AxelusOptimizerPublic\AxelusOptimizer.ps1"
+
+
 # ==========================================================
 # Axelus Optimizer Modern GUI - WPF Version
 # Author: Axelus
