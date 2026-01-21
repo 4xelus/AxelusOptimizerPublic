@@ -1,101 +1,143 @@
-# ==========================================================
-# Axelus Optimizer
-# High-performance Windows gaming optimizer
-# Author: Axelus
-# ==========================================================
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 
-# REQUIRE ADMIN
+# --------------------------
+# Sprawdzenie admina
+# --------------------------
 if (-not ([Security.Principal.WindowsPrincipal] `
     [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
     [Security.Principal.WindowsBuiltInRole] "Administrator"))
 {
-    Write-Host "Run PowerShell as Administrator!" -ForegroundColor Red
+    [System.Windows.Forms.MessageBox]::Show("Run PowerShell as Administrator!","Error","OK","Error")
     exit
 }
 
-Clear-Host
-Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host " AXELUS OPTIMIZER - MAX PERFORMANCE MODE" -ForegroundColor Green
-Write-Host "==============================================" -ForegroundColor Cyan
-
-# ----------------------------------------------------------
-# SYSTEM INFO
-# ----------------------------------------------------------
-$cpu = (Get-CimInstance Win32_Processor).Name
-$gpu = (Get-CimInstance Win32_VideoController | Select-Object -First 1).Name
-$ram = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
-
-Write-Host "CPU: $cpu"
-Write-Host "GPU: $gpu"
-Write-Host "RAM: $ram GB"
-Write-Host ""
-
-# ----------------------------------------------------------
-# POWER PLAN (ULTIMATE PERFORMANCE)
-# ----------------------------------------------------------
-Write-Host "[1/6] Setting Ultimate Performance power plan..." -ForegroundColor Yellow
-powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 > $null
-powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61
-
-# ----------------------------------------------------------
-# GAME MODE + DVR OFF
-# ----------------------------------------------------------
-Write-Host "[2/6] Disabling Game DVR & background capture..." -ForegroundColor Yellow
-reg add "HKCU\System\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f
-
-# ----------------------------------------------------------
-# INPUT & LATENCY TWEAKS
-# ----------------------------------------------------------
-Write-Host "[3/6] Applying input & latency optimizations..." -ForegroundColor Yellow
-reg add "HKCU\Control Panel\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f
-reg add "HKCU\Control Panel\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f
-reg add "HKCU\Control Panel\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f
-
-# ----------------------------------------------------------
-# NETWORK OPTIMIZATION
-# ----------------------------------------------------------
-Write-Host "[4/6] Network latency optimizations..." -ForegroundColor Yellow
-netsh interface tcp set global autotuninglevel=normal
-netsh interface tcp set global ecncapability=disabled
-netsh interface tcp set global timestamps=disabled
-
-# ----------------------------------------------------------
-# SERVICES DEBLOAT (SAFE FOR GAMING)
-# ----------------------------------------------------------
-Write-Host "[5/6] Disabling unnecessary services..." -ForegroundColor Yellow
-
-$services = @(
-    "DiagTrack",
-    "MapsBroker",
-    "SysMain",
-    "WSearch",
-    "Fax",
-    "RetailDemo",
-    "XboxGipSvc",
-    "XboxNetApiSvc",
-    "XblAuthManager",
-    "XblGameSave"
-)
-
-foreach ($svc in $services) {
-    Get-Service -Name $svc -ErrorAction SilentlyContinue | `
-    Where-Object {$_.Status -ne "Stopped"} | `
-    Stop-Service -Force
-    Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
+# --------------------------
+# FUNKCJE OPTIMALIZACJI
+# --------------------------
+function Set-PowerPlan {
+    Write-Host "Setting Ultimate Performance Power Plan..."
+    try {
+        powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 > $null
+        powercfg -setactive e9a42b02-d5df-448d-aa00-03f14749eb61
+        return "Power Plan set successfully!"
+    } catch { return "Failed to set Power Plan: $_" }
 }
 
-# ----------------------------------------------------------
-# GPU SCHEDULING + SYSTEM TWEAKS
-# ----------------------------------------------------------
-Write-Host "[6/6] GPU & system performance tweaks..." -ForegroundColor Yellow
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" /v HwSchMode /t REG_DWORD /d 2 /f
+function Disable-GameDVR {
+    Write-Host "Disabling Game DVR & Background Capture..."
+    try {
+        reg add "HKCU\System\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f
+        reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\GameDVR" /v AllowGameDVR /t REG_DWORD /d 0 /f
+        return "Game DVR disabled!"
+    } catch { return "Failed to disable Game DVR: $_" }
+}
 
-# ----------------------------------------------------------
-# FINISH
-# ----------------------------------------------------------
-Write-Host ""
-Write-Host "==============================================" -ForegroundColor Green
-Write-Host " OPTIMIZATION COMPLETE" -ForegroundColor Green
-Write-Host " Restart PC for full effect." -ForegroundColor Cyan
-Write-Host "==============================================" -ForegroundColor Green
+function Input-LatencyTweaks {
+    Write-Host "Applying Input & Latency Optimizations..."
+    try {
+        reg add "HKCU\Control Panel\Mouse" /v MouseSpeed /t REG_SZ /d 0 /f
+        reg add "HKCU\Control Panel\Mouse" /v MouseThreshold1 /t REG_SZ /d 0 /f
+        reg add "HKCU\Control Panel\Mouse" /v MouseThreshold2 /t REG_SZ /d 0 /f
+        return "Input & Latency optimized!"
+    } catch { return "Failed Input & Latency tweaks: $_" }
+}
+
+function Network-Optimizations {
+    Write-Host "Applying Network Optimizations..."
+    try {
+        netsh interface tcp set global autotuninglevel=normal
+        netsh interface tcp set global ecncapability=disabled
+        netsh interface tcp set global timestamps=disabled
+        return "Network optimized!"
+    } catch { return "Failed Network optimizations: $_" }
+}
+
+function Services-Debloat {
+    Write-Host "Disabling unnecessary services..."
+    $services = @("DiagTrack","MapsBroker","SysMain","WSearch","Fax","RetailDemo","XboxGipSvc","XboxNetApiSvc","XblAuthManager","XblGameSave")
+    try {
+        foreach ($svc in $services) {
+            Get-Service -Name $svc -ErrorAction SilentlyContinue | Where-Object {$_.Status -ne "Stopped"} | Stop-Service -Force
+            Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
+        }
+        return "Unnecessary services disabled!"
+    } catch { return "Failed to debloat services: $_" }
+}
+
+function GPU-Tweaks {
+    Write-Host "Applying GPU & System Tweaks..."
+    try {
+        reg add "HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" /v HwSchMode /t REG_DWORD /d 2 /f
+        return "GPU & system tweaks applied!"
+    } catch { return "Failed GPU tweaks: $_" }
+}
+
+# --------------------------
+# GUI
+# --------------------------
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Axelus Optimizer GUI"
+$form.Size = New-Object System.Drawing.Size(550,520)
+$form.StartPosition = "CenterScreen"
+$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedDialog
+$form.MaximizeBox = $false
+
+# Log textbox
+$logBox = New-Object System.Windows.Forms.TextBox
+$logBox.Multiline = $true
+$logBox.Location = New-Object System.Drawing.Point(20,310)
+$logBox.Size = New-Object System.Drawing.Size(500,160)
+$logBox.ScrollBars = "Vertical"
+$logBox.ReadOnly = $true
+$logBox.BackColor = [System.Drawing.Color]::Black
+$logBox.ForeColor = [System.Drawing.Color]::Lime
+$form.Controls.Add($logBox)
+
+# Funkcja log
+function Log($text) {
+    $logBox.AppendText("[$(Get-Date -Format 'HH:mm:ss')] $text`r`n")
+    $logBox.Refresh()
+}
+
+# Lista przycisków i funkcji
+$buttons = @(
+    @{Text="Power Plan"; Func={Log (Set-PowerPlan)}; Tip="Sets Ultimate Performance power plan"},
+    @{Text="Game DVR Off"; Func={Log (Disable-GameDVR)}; Tip="Disables Game DVR & Background Capture"},
+    @{Text="Input/Latency"; Func={Log (Input-LatencyTweaks)}; Tip="Improves mouse/input latency"},
+    @{Text="Network"; Func={Log (Network-Optimizations)}; Tip="Optimizes network settings for gaming"},
+    @{Text="Services"; Func={Log (Services-Debloat)}; Tip="Stops and disables non-essential services"},
+    @{Text="GPU Tweaks"; Func={Log (GPU-Tweaks)}; Tip="Applies GPU scheduling tweaks"}
+)
+
+$y = 20
+foreach ($btn in $buttons) {
+    $button = New-Object System.Windows.Forms.Button
+    $button.Text = $btn.Text
+    $button.Size = New-Object System.Drawing.Size(200,40)
+    $button.Location = New-Object System.Drawing.Point(170,$y)
+    $button.Add_Click($btn.Func)
+    $tooltip = New-Object System.Windows.Forms.ToolTip
+    $tooltip.SetToolTip($button,$btn.Tip)
+    $form.Controls.Add($button)
+    $y += 50
+}
+
+# Restart PC button
+$restartBtn = New-Object System.Windows.Forms.Button
+$restartBtn.Text = "Restart PC"
+$restartBtn.Size = New-Object System.Drawing.Size(200,40)
+$restartBtn.Location = New-Object System.Drawing.Point(170,$y)
+$restartBtn.BackColor = [System.Drawing.Color]::Red
+$restartBtn.ForeColor = [System.Drawing.Color]::White
+$restartBtn.Add_Click({
+    if ([System.Windows.Forms.MessageBox]::Show("Restart PC now?", "Restart", [System.Windows.Forms.MessageBoxButtons]::YesNo) -eq [System.Windows.Forms.DialogResult]::Yes) {
+        Restart-Computer
+    }
+})
+$form.Controls.Add($restartBtn)
+
+# Start GUI
+$form.Add_Shown({$form.Activate()})
+[void]$form.ShowDialog()
+
